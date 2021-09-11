@@ -1,0 +1,22 @@
+Experiments around forking a new process and then re-exec'ing the same
+executable. I got interested in this idea as a potential way to make
+multiprocess programming more pleasant.
+
+Currently the only code is an `exec_path` function that tries to get the path of
+the currently-running executable in a cross-platform way. It probably has bugs,
+and has been lightly tested on Linux only.
+
+References:
+
+- https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamew
+- https://illumos.org/man/3c/getexecname
+- https://opensource.apple.com/source/dyld/dyld-852.2/doc/man/man3/dyld.3.auto.html
+- https://stackoverflow.com/a/1024937/13629768
+- https://www.freebsd.org/cgi/man.cgi?query=sysctl&sektion=3
+
+To do:
+
+- Does Android have /proc/self/exe?
+- Which platforms will always return absolute paths? E.g. illumos getexecname(3)
+  may return a relative path, and this must be interpreted relative to the
+  working directory when exec was called, not the current working directory.
