@@ -12,7 +12,6 @@ mod unix {
     #[allow(unused)]
     use std::ptr::NonNull;
 
-    #[cfg(unix)]
     #[allow(unused)]
     fn from_link(link: &CStr) -> Result<PathBuf, Error> {
         let mut buf = Vec::with_capacity(libc::PATH_MAX as _);
