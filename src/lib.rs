@@ -14,10 +14,14 @@ mod unix {
 
     #[cfg(unix)]
     #[allow(unused)]
-    unsafe fn from_link(this: *const c_char) -> Result<PathBuf, Error> {
+    fn from_link(link: &CStr) -> Result<PathBuf, Error> {
         let mut buf = Vec::with_capacity(libc::PATH_MAX as _);
         let len = match unsafe {
-            libc::readlink(this, buf.as_mut_ptr() as *mut c_char, libc::PATH_MAX as _)
+            libc::readlink(
+                link.as_ptr(),
+                buf.as_mut_ptr() as *mut c_char,
+                libc::PATH_MAX as _,
+            )
         } {
             -1 => return Err(Error::last_os_error()),
             n => n as usize,
@@ -31,17 +35,17 @@ mod unix {
 
     #[cfg(target_os = "linux")]
     pub fn exec_path() -> Result<PathBuf, Error> {
-        unsafe { from_link(b"/proc/self/exe\0" as *const _ as *const c_char) }
+        from_link(CStr::from_bytes_with_nul(b"/proc/self/exe\0").unwrap())
     }
 
     #[cfg(target_os = "dragonfly")]
     pub fn exec_path() -> Result<PathBuf, Error> {
-        unsafe { from_link(b"/proc/curproc/file\0" as *const _ as *const c_char) }
+        from_link(CStr::from_bytes_with_nul(b"/proc/curproc/file\0").unwrap())
     }
 
     #[cfg(target_os = "netbsd")]
     pub fn exec_path() -> Result<PathBuf, Error> {
-        unsafe { from_link(b"/proc/curproc/exe\0" as *const _ as *const c_char) }
+        from_link(CStr::from_bytes_with_nul(b"/proc/curproc/exe\0").unwrap())
     }
 
     #[cfg(target_os = "freebsd")]
@@ -93,10 +97,11 @@ mod unix {
 
     #[cfg(any(target_os = "illumos", target_os = "solaris"))]
     pub fn exec_path() -> Result<PathBuf, Error> {
-        let p = unsafe {
-            NonNull::new(libc::getexecname() as *mut _).ok_or_else(|| Error::last_os_error())?
-        };
-        let buf = unsafe { CStr::from_ptr(p.as_ptr()).to_bytes().to_owned() };
+        let p = unsafe { libc::getexecname() as *mut c_char };
+        let p = NonNull::new(p)
+            .ok_or_else(|| Error::last_os_error())?
+            .as_ptr();
+        let buf = unsafe { CStr::from_ptr(p).to_bytes().to_owned() };
         Ok(OsString::from_vec(buf).into())
     }
 }
