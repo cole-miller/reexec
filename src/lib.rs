@@ -125,7 +125,7 @@ mod windows {
                 0 => return Err(Error::last_os_error()), // paths can't be empty
                 n if n < cap => break n,
                 _ => {
-                    buf.reserve(cap);
+                    buf.reserve(cap as usize);
                     cap *= 2;
                 }
             }
