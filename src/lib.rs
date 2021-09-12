@@ -113,13 +113,17 @@ mod windows {
     use winapi::um::libloaderapi::GetModuleFileNameW;
 
     pub fn exec_path() -> Result<PathBuf, Error> {
+        // this approach adapted from how std does getcwd
         let mut cap = 512;
         let mut buf: Vec<u16> = Vec::with_capacity(cap as usize);
         let len = loop {
             match unsafe { GetModuleFileNameW(std::ptr::null_mut(), buf.as_mut_ptr(), cap) } {
-                0 => return Err(Error::last_os_error()),
+                0 => return Err(Error::last_os_error()), // paths can't be empty
                 n if n < cap => break n,
-                _ => cap *= 2,
+                _ => {
+                    buf.reserve(cap);
+                    cap *= 2;
+                }
             }
         };
         unsafe {
